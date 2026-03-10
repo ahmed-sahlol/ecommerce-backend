@@ -1,0 +1,281 @@
+const http = require('http'); // import library http that handel (rule) to get requests and send response
+const fs = require('fs'); // is import the File System module contains all the functions your needs to interact with the files and directories on your computer's operating system
+
+// http.createServer : make a server that receiving requests and sending responses
+const server = http.createServer((req, res) => {
+    // This function is the "brain" of your server.
+    // It runs every time a client connects and sends a request
+    console.log(req.url, req.method, req.headers);
+    //is a function that immediately and forcefully terminates the current Node.js
+    // process.exit();
+    const url = req.url;
+    const method = req.method;
+    if (url === '/') {
+        res.setHeader('Content-Type', 'text/html');
+        res.write('<html>');
+        res.write('<head><title>Enter messege </title></head>')
+        res.write('<boody> <form action = "/message" method = "POST"><input type = "text" name ="message"> <button type="submit">Send</button></form></body>');
+        res.write('</html>');
+        return res.end();
+    }
+
+    if (url === '/message' && method === 'POST') {
+        const boody = [];
+        /*
+        When a client sends a large amount of data
+        (like a file upload or even a typical form submission),
+        Node.js doesn't give you the entire data body at once. Instead,
+        it streams the data in small pieces (chunks) to keep the server efficient and non-blocking.
+        */
+        // listen in on to recive a chunk from user
+        req.on('data', (chunk) => {
+            boody.push(chunk);
+        });
+        // listen is end and now we accumalte cunks to get data
+        return req.on('end', () => {
+            // method combines all the individual Buffer chunks from the boody array into one large Buffer
+            const parseboody = Buffer.concat(boody).toString();
+            const message = parseboody.split('=')[0];
+            fs.writeFileSync('message.txt', message); // stop code excute until file created
+            // fs.writeFileSync('message.txt',message); // not bolck
+            res.statusCode = 302;
+            res.setHeader('Location', '/');
+            return res.end();
+        });
+        // make file make his name is message.txt and write Dummy
+        // fs.writeFileSync('message.txt','Dummy');
+        // there more statue code 302 mean Redirection
+        // res.statusCode = 302;
+        // // go to location '/' mean home page
+        // res.setHeader('Location','/');
+        // return res.end();
+    }
+
+    res.setHeader('Content-Type', 'text/html');
+    res.write('<html>');
+    res.write('<head><title> My first program </title></head>')
+    res.write('<boody><h1>hello my name is sahlol</h1> </boody>')
+    res.write('</html>');
+    res.end();
+});
+
+// listen :  is the method that activates your Node.js HTTP server and tells it to start accepting incoming connections on a specified network address and port.
+// listen(port) A port is a communication endpoint used by a computer's operating system to distinguish between different services running on the same machine.
+server.listen(3000);
+
+// module.exports = requestHandelr;
+exports = requestHandelr;
+//module.exports is what is returned when another file uses the require() function to import the current file.
+// can used like object = {} and can make it exports = requestHandelr;
+const server = http.createServer(route); // go to route file
+
+/// =====================================================================
+                                            Exprees
+
+in the end middleware means that an incoming request is automatically funneled through a bunch of functionsby expressjs,
+so instead of just having one request handler, you will actually have a possibility of hooking in multiple
+functions which the request will go through until you send a response.
+This allows you to split your code into multiple blocks or pieces instead of having one huge function
+
+
+import by require('express');
+const app = express(); // make a server
+// use : is allows us to make a new middelware funcation
+app.use();
+
+app use will be executed for every incoming request
+next  : argument basically this function you're receiving here has to be executed to
+allow the request to travel on to the next middleware.
+{
+/// if remove next() in any refresh console print "Hello sahlol1"
+/// but in second print "Hello sahlol1" , "Hello sahlol2";
+app.use((req, res, next) => {
+    console.log("Hello sahlol1");
+    next();
+});
+
+app.use((req, res, next) => {
+    console.log("Hello sahlol2");
+    /// send() is func in express is like setheadear and write and it defualt return
+    res.send('<h1>Hello sahlol in second middleware.</h1>');
+});
+
+}
+
+app.listen(3000);
+is same
+const server = http.createServer(app);
+server.listen(3000);
+
+{
+    app.use('/add-product', (req, res, next) => {
+        console.log("Hello is second middleware");
+        res.send('<form action="/product" method="POST"><input type="text" name="title"><button>add prodcut</button></input></form>');
+    });
+
+
+    redirect is go to specfic place is same {res.statusCode = 302;res.setHeader('Location', '/');return res.end();}
+    app.use('/product', (req, res, next) => {
+        res.redirect('/add-product');
+    });
+}
+
+app.use('/product', (req, res, next) => {
+    console.log(req.body); /// undifiend
+    res.redirect('/add-product');
+});
+request gives us this body convenience ( data ) property here but by default, request doesn't try to parse the
+incoming request body. To do that,we need to register a parser and we do that by adding another middleware.
+and you typically do that before your route handling middlewares because
+the parsing of the body should be done no matter where your request ends up and there, I want to parse the incoming request body.
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({external: false}));
+this middelware recive data from html POST and conver it to object in java scribt
+app.use work for all http request
+app.post work for get data
+app.get work to dispaly
+
+// عامل الاستقبال
+app.use(express.urlencoded({ extended: false }));
+// فتح صفحة
+app.get('/', (req, res) => {
+  res.send(`
+    <form method="POST" action="/login">
+      <input name="username">
+      <button>Login</button>
+    </form>
+  `);
+});
+// استلام البيانات
+app.post('/login', (req, res) => {
+  res.send(`Welcome ${req.body.username}`);
+});
+
+
+const Router = express.Router(); يقسم كل حاجه في مكان
+module.exports = Router;app تصدير الراوتر لي
+exports.router = router;
+exports.listproduct = listproduct; can exports array fix =>  app.use('/admin', adminroute.router);
+can export any object
+
+app.use('/admin',adminroute); // filter go if path start with /admin
+
+const path = require('path');
+res.sendFile(path.join(__dirname, '../', 'views', 'shop.html'));
+send a file as a response using a path __dirname (accece in current file in your project) , '../' bakspace file (up 1 level)
+module.exports = path.dirname(require.main.filename); بترجع الملف اللي بدأ منه البرنامج
+صدّر المسار الأساسي للمشروع (Root Directory)
+
+app.use(express.static(path.joini(__dirname, 'public')));
+// this line make public file can acces from any file
+--------------------------
+app.set()
+allows us to set any values globally on our express application and this can actually also be keys or configuration items
+
+View engine allows us to tell express hey for any dynamic templates we're trying to render and
+ there will be a special function for doing that,please use this engine we're registering here and
+ views allows us to tell express where to find these dynamic
+
+PUG
+app.set('view engine', 'pug');
+app.set('views', 'views');
+render('path',obje)
+So now we're telling express that we want to compile dynamic templates with the pug engine and where to find these templates.
+ejs <% %> <%= outputvalue %>
+import block of code <%- include('includes/head.ejs') %>
+
+            MVC
+module
+    Models are basically objects or is a part of your code that is [responsible for representing your data]
+    in your code and allowing you to work with your data,
+    so things like saving data, fetching data to or from a file or even if it's just in memory as we're currently
+    doing it,this should be handled by models.
+view
+    The views are responsible for what the user sees in the end,
+    they are responsible for rendering the right content in our html documents and sending that back
+    to the user,
+controller
+        [connection point between the models and your views]
+        because since the views shouldn't care about the application logic and the models do care about how
+        to save and fetch data and so on, the controllers are the thing working with the models, saving that data
+        or triggering that save process and so on
+const getproductsfromfile = (cb) => {
+    fs.readFile(p, (err, fileContent) => { // read file in path p
+        if (err) {
+            cb([]);
+        } else cb(JSON.parse(fileContent)); // convert content to array
+    });
+};
+fs.writeFile(p, JSON.stringify(product), (err) => {
+ //JSON.stringify(product) convert array to json file
+                console.log(err);
+            });
+
+router.get('/products/:productid'); it mean /products/any id
+const prodid = req.params.id; Object فيه كل الـ route parameters
+const editemode = req.query.edit; ده بيجيب الـ Query Parameters من الـ URL.
+
+
+/////////////////////////////////////////////////////
+const mysql = require('mysql2'); /// define sql
+mysql.createPool() بننشئ مجموعة اتصالات بقاعدة البيانات بدل ما نفتح اتصال جديد كل مرة
+يعني إيه Pool؟
+بدل ما:
+كل request يفتح connection
+وبعدها يقفله
+بنستخدم pool:
+فيه اتصالات جاهزة
+أي request بياخد اتصال ويرجعه تاني
+ده أسرع وأفضل في الأداء
+
+
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    database: 'node-complete',
+    password: '12345678'
+});
+module.exports = pool.promise(); Promise = وعد إن عملية هتخلص في المستقبل تنجح او تفشل
+
+db.execute('SELECT * FROM products') send query to database and return promise
+then(result => { ... }) if query is succsses
+result[0] = الصفوف اللي رجعت من الجدول,  result[1] = معلومات الأعمدة
+result[0] = data at db ,  result[1] = inforamtion of fields
+
+catch(err => { ... }); query not succsses
+
+const Sequelize = require('sequelize');
+// name project name user password kind of db host
+const sequelize = new Sequelize('node-complete', 'root', '12345678', {
+    dialect: 'mysql', host: 'localhost'
+});
+هنا إحنا بنجيب مكتبة Sequelize.
+Sequelize هي ORM (Object Relational Mapping) بتخليك تتعامل مع قواعد البيانات كـ كائنات JavaScript بدل كتابة SQL دايركت
+sequelize.sync() دي دالة من مكتبة Sequelize.
+                 وظيفتها:
+                 تنشئ الجداول في قاعدة البيانات تلقائيًا لو مش موجودة.
+                 تطابق الجداول مع الـ Models اللي انت معرفها في الكود.
+
+dataproducts.findAll().then(listproduct => { ... })هيرجع كل المنتجات المخزنة في قاعدة البيانات.
+findAll() هو دالة جاهزة في Sequelize لاسترجاع كل السجلات (rows) من جدول معين
+dataproducts.findAll({ where: { id: prodid } })  where جلب كل السجلات التي تحقق الشرط الموجود في
+{ where: { id: prodid } } condation
+
+dataproducts.findByPk(prodid).then(por => ) Primary Key  جلب سجل واحد فقط بناءً على
+إذا تعرف أن الـ id هو  استخدم   Primary Key
+أفضل لو تريد الحصول على عدة سجلات تحقق شرطًا معينًا.  () findAll
+
+dataproducts.findByPk(prodId).then(curr => {
+        curr.title = updatedTitle;
+        curr.price = updatedPrice;
+        curr.imageUrl = updatedImageUrl;
+        curr.description = updatedDesc;
+        return curr.save();
+    }).then(result => {
+        console.log('Updated Product');
+        res.redirect('/admin/products');
+    }).catch(err => {
+        console.log(err);
+    });
+curr.save(); ===> save update at db
+the firts then is finshed good go to next then [execute then1 ,then 2 , by order]
