@@ -19,7 +19,6 @@ app.use(shoproute);
 app.use(errorcontrollers.error404);
 
 sequelize.sync().then((result) => {
-    console.log('i am ok');
     app.listen(3000);
 }).catch((err) => {
     // console.log(err);
