@@ -279,3 +279,13 @@ dataproducts.findByPk(prodId).then(curr => {
     });
 curr.save(); ===> save update at db
 the firts then is finshed good go to next then [execute then1 ,then 2 , by order]
+
+Productmodel.belongsTo(Usermodel, {constraints: true, onDelete: 'CASCADE'});
+User 1  ----  * Products  for each product must have a user
+{constraints: true, onDelete: 'CASCADE'} same ids onDelete  mean if delete user remove his products
+sequelize.sync({force: true}) delete all tables at db and creat it from zero يمسح الجداول ويعيد إنشائها
+req.user.createProduct({
+        title: title, price: price, imageurl: imageUrl, description: description
+    }).then
+same      getProducts(),addProduct(),createProduct()
+if i save a user at request i can use this func
