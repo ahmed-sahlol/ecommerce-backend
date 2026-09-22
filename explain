@@ -289,3 +289,14 @@ req.user.createProduct({
     }).then
 same      getProducts(),addProduct(),createProduct()
 if i save a user at request i can use this func
+
+===================================================================================
+            Mongo
+
+
+
+
+
+
+
+
