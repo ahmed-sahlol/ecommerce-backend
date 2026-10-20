@@ -290,8 +290,190 @@ req.user.createProduct({
 same      getProducts(),addProduct(),createProduct()
 if i save a user at request i can use this func
 
-===================================================================================
-            Mongo
+
+
+
+
+const bcrypt = require('bcryptjs');
+used for hash
+exports.postSignup = (req, res, next) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    const confirmPassword = req.body.confirmPassword;
+    User.findOne({email: email}).then(userDoc => {
+        if (userDoc) return res.redirect('/signup');
+        return bcrypt.hash(password, 12).then(hashed => {
+            const new_user = new User({email: email, password: hashed, cart: {items: []}});
+            return new_user.save();
+        }).then(result => {
+            res.redirect('/');
+        });
+    }).catch(err => {
+        console.log(err);
+    })
+};
+
+exports.postLogin = (req, res, next) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    User.findOne({email: email})
+        .then(user => {
+            if (!user) return res.redirect('/login');
+            bcrypt.compare(password, user.password).then(domatch => {
+                if (domatch) {
+                    req.session.isLoggedIn = true;
+                    req.session.userId = user._id.toString();
+                    return req.session.save(err => {
+                        console.log(err);
+                        res.redirect('/');
+                    });
+                }
+                res.redirect('/login');
+            }).catch(err => {
+                console.log(err);
+                res.redirect('/login');
+            })
+        }).catch(err => console.log(err));
+};
+
+the important thing is you can't reconstruct the password I use you can't decrypt this.
+This is also the reason why we don't encrypt the e-mail because we won't be able to decrypt this
+
+
+
+Csrf attacks
+Csrf stands for cross-site request forgery
+const csrf = require('csurf');
+
+
+يعني إيه csurf؟ وبيعمل إيه وليه بنستخدمه؟
+الـ csurf هي مكتبة كانت بتُستخدم مع Express.js للحماية من هجوم أمني اسمه CSRF — Cross-Site Request Forgery.
+خلّينا نفهم المشكلة الأول، وبعدها نفهم المكتبة.
+1. إيه هو هجوم CSRF؟
+تخيّل إن عندك موقع بنك، وإنت عامل Login فيه، والمتصفح محتفظ بالـ Session Cookie بتاعتك.
+لما تعمل Request للموقع، المتصفح ممكن يبعت الـ Cookie تلقائيًا؛ وده طبيعي عشان السيرفر يعرف إنك المستخدم اللي عامل Login.
+المشكلة بتحصل لو دخلت موقعًا خبيثًا، والموقع ده خلّى متصفحك يبعت طلبًا لموقع البنك من غير ما تقصد.
+إنت عامل Login في البنك
+المتصفح عنده Session Cookie صالحة
+
+تدخل موقعًا خبيثًا
+
+الموقع الخبيث يحاول إرسال طلب للبنك
+مثل طلب تحويل أموال
+
+المتصفح قد يرسل Cookie تلقائيًا
+
+السيرفر يستقبل الطلب
+لو مفيش حماية كافية، ممكن يفتكره طلبًا شرعيًا منك
+
+
+النقطة المهمة: المهاجم مش لازم يعرف قيمة الـ Cookie أو يسرقها بنفسه. الفكرة إنه يحاول يستغل إن المتصفح بيبعتها مع الطلبات المناسبة.
+CSRF بيستهدف أساسًا الأنظمة اللي بتعتمد على بيانات اعتماد يرسلها المتصفح تلقائيًا، زي Session Cookies.
+2. إزاي csurf كان بيحمي من الهجوم ده؟
+كان بيستخدم فكرة اسمها CSRF Token، يعني رمز حماية إضافي.
+الـ flow ببساطة:
+1. السيرفر بيولّد Token مرتبط بجلسة المستخدم أو بسر محفوظ في Cookie، حسب الإعدادات.
+2. السيرفر بيبعث الـ Token للصفحة، مثلًا داخل Hidden Input في فورم.
+3. لما المستخدم يبعت طلبًا يغيّر بيانات، زي POST، الصفحة بتبعت الـ Token مع الطلب.
+4. الـ Middleware بيتأكد إن الـ Token صحيح. لو مفقود أو غير صحيح، بيرفض الطلب بدل ما يسمح بتنفيذه.
+
+
+
+app.use((req, res, next) => {
+    res.locals.isAuthenticated = req.session.isLoggedIn;
+    res.locals.csrfToken = req.csrfToken();
+    next();
+});
+
+res.locals؟
+في Express.js، res.locals هو Object بتخزن فيه بيانات مؤقتة تقدر تستخدمها داخل الـ View اللي هتعمله Render في نفس الـ Request.
+
+يعني مثلًا، عندك صفحة EJS وعايز تعرض اسم المستخدم اللي عامل Login. تقدر تحط اسمه في res.locals وتستخدمه داخل الصفحة.
+
+
+
+const flash = require('connect-flash');
+app.use(flash());
+
+الـ flash في Express.js عبارة عن طريقة لتخزين رسائل مؤقتة بتظهر للمستخدم مرة واحدة غالبًا، وبعدها بتتم إزالتها.
+
+مثلاً:
+- ❌ Invalid email or password
+- ✅ Product added successfully
+- ✅ Password changed successfully
+وده مفيد جدًا لما تعمل redirect من صفحة لصفحة، لأنك عايز تعرض رسالة للمستخدم بعد ما ينتقل للصفحة الجديدة.
+
+
+const crypto = require('crypto');
+ده بيستورد موديول اسمه crypto موجود أصلًا في Node.js، وبيوفر أدوات للتشفير وتوليد أرقام عشوائية آمنة، ومش محتاج تنزّله بـ npm install.
+
+ إنت بتستخدمه ليه؟
+
+crypto.randomBytes(32, (err, buffer) => {
+    // ...
+});
+
+الدالة randomBytes() بتولّد 32 بايت من البيانات العشوائية الآمنة، وده مناسب لإنشاء Token يصعب تخمينه.
+
+crypto.randomBytes(32)
+
+توليد بيانات عشوائية آمنة
+
+buffer.toString('hex')
+
+تحويل البيانات إلى نص مكوّن من 64 حرف Hex
+
+const token = ...
+
+Token تستخدمه في رابط إعادة تعيين الباسورد
+2. نفهم كل جزء بسرعة
+
+    crypto: الموديول المسؤول عن العمليات التشفيرية.
+
+    randomBytes(32, callback): بيولّد 32 بايت عشوائية، والـ callback بتستقبل النتيجة.
+
+    err: لو حصل خطأ أثناء التوليد.
+
+    buffer: بيحتوي على البيانات العشوائية.
+
+    toString('hex'): بيحوّل البيانات إلى نص يمكن استخدامه في URL.
+
+مثال توضيحي لشكل الـ Token:
+
+const token = 'a3f91b...'; // مثال مختصر فقط
+
+الـ Token الحقيقي الناتج من 32 بايت هيكون 64 حرف Hex.
+3. إيه علاقته بإعادة تعيين الباسورد؟
+
+في مشروعك، التسلسل كالتالي:
+
+1. المستخدم يدخل الإيميل
+
+يطلب إعادة تعيين الباسورد.
+
+2. crypto يولّد Token
+
+قيمة عشوائية صعبة التخمين.
+
+3. تحفظه في قاعدة البيانات
+
+مع وقت انتهاء صلاحيته بعد ساعة.
+
+4. تبعت الرابط بالإيميل
+
+المستخدم يفتح الرابط ويستخدم الـ Token لإثبات امتلاكه لرابط إعادة التعيين.
+
+والسطر ده في كودك:
+
+user.resetTokenExpiration = Date.now() + 3600000;
+
+بيحدد انتهاء الصلاحية بعد ساعة؛ لأن 3600000 ملي ثانية = ساعة واحدة.
+
+مهم: لازم تتأكد إن الـ Token صالح ولم تنتهِ صلاحيته قبل السماح بتغيير الباسورد، وإنك تمسحه بعد الاستخدام الناجح. والأفضل كمان تخزّن Hash للـ Token في قاعدة البيانات بدل القيمة الأصلية.
+
+الخلاصة: crypto هنا بيولّد مفتاحًا عشوائيًا آمنًا ومؤقتًا، علشان المستخدم يقدر يعيد تعيين الباسورد من خلال رابط لا يمكن تخمينه بسهولة.
+
+
 
 
 
