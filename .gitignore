@@ -1,3 +1,4 @@
 termainal
 explain
-.envnode_modules/
+.env
+node_modules/
