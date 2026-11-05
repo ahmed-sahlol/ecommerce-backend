@@ -4,29 +4,20 @@ const Schema = mongoose.Schema;
 
 const productSchema = new Schema({
     title: {
-        type: String,
-        required: true
-    },
-    price: {
-        type: Number,
-        required: true
-    },
-    description: {
-        type: String,
-        required: true
-    },
-    imageUrl: {
-        type: String,
-        required: true
-    },
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        type: String, required: true, trim: true, minlength: 1
+    }, price: {
+        type: Number, required: true, min: [0.01, 'Price must be greater than zero']
+    }, description: {
+        type: String, required: true, trim: true, minlength: 1
+    }, imageUrl: {
+        type: String, required: true, trim: true, match: [/^https?:\/\/.+/i, 'Please enter a valid image URL']
+    }, userId: {
+        type: Schema.Types.ObjectId, ref: 'User', required: true
     }
 });
 
 module.exports = mongoose.model('Product', productSchema);
+
 
 // const mongodb = require('mongodb');
 // const getDb = require('../util/database').getDb;
