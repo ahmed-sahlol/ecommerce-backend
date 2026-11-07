@@ -56,7 +56,6 @@ exports.postCartDeleteProduct = (req, res, next) => {
     }).catch(next);
 };
 
-
 exports.postOrder = async (req, res, next) => {
     let session;
     try {
@@ -65,14 +64,19 @@ exports.postOrder = async (req, res, next) => {
         await session.withTransaction(async () => {
             invalidCart = false;
             const user = await User.findById(req.user._id).session(session).populate('cart.items.productId');
-
             if (!user || user.cart.items.length === 0 || user.cart.items.some(item => !item.productId)) {
                 invalidCart = true;
                 return;
             }
             const products = user.cart.items.map(i => {
                 return {
-                    quantity: i.quantity, product: {...i.productId._doc}
+                    quantity: i.quantity, product: {
+                        productId: i.productId._id,
+                        title: i.productId.title,
+                        price: i.productId.price,
+                        description: i.productId.description,
+                        imageUrl: i.productId.imageUrl
+                    }
                 };
             });
 

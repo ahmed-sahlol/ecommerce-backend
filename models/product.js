@@ -15,7 +15,7 @@ const productSchema = new Schema({
         type: Schema.Types.ObjectId, ref: 'User', required: true
     }
 });
-
+productSchema.index({userId: 1});
 module.exports = mongoose.model('Product', productSchema);
 
 

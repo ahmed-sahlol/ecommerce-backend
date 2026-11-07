@@ -1,9 +1,11 @@
 const path = require('path');
 const mongoose = require('mongoose');
-const MongoDBStore = require('connect-mongodb-session')(session);
 require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
 const csrf = require('csurf');
 const flash = require('connect-flash');
 
@@ -29,7 +31,9 @@ const authRoutes = require('./routes/auth');
 app.use(express.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret: SESSION_SECRET, resave: false, saveUninitialized: false, store: store
+    secret: SESSION_SECRET, resave: false, saveUninitialized: false, store: store, cookie: {
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 1000
+    }
 }));
 app.use(csrfProtection);
 app.use(flash());
@@ -39,8 +43,9 @@ app.use((req, res, next) => {
     User.findById(req.session.user._id).then(user => {
         req.user = user;
         next();
-    }).catch(err => console.log(err));
+    }).catch(err => next(err));
 });
+
 app.use((req, res, next) => {
     res.locals.isAuthenticated = req.session.isLoggedIn;
     res.locals.csrfToken = req.csrfToken();

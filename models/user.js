@@ -4,57 +4,68 @@ const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
     email: {
-        type: String, required: true
+        type: String, required: true, unique: true, lowercase: true, trim: true
     }, password: {
-        type: String, required: true
+        type: String, required: true, minlength: 8, maxlength: 128
     }, resetToken: String, resetTokenExpiration: Date, cart: {
         items: {
             type: [{
                 productId: {
                     type: Schema.Types.ObjectId, ref: 'Product', required: true
                 }, quantity: {
-                    type: Number, required: true
+                    type: Number, required: true, min: 1, validate: {
+                        validator: Number.isInteger, message: 'Quantity must be an integer.'
+                    }
                 }
             }], default: []
         }
     }
 });
 
-userSchema.methods.addToCart = function (product) {
-    const cartProductIndex = this.cart.items.findIndex(cp => {
-        return cp.productId.toString() === product._id.toString();
-    });
-    let newQuantity = 1;
-    const updatedCartItems = [...this.cart.items];
+userSchema.methods.addToCart = async function (product) {
+    const productId = product._id;
+    const incrementResult = await this.constructor.updateOne({
+        _id: this._id, 'cart.items.productId': productId
+    }, {$inc: {'cart.items.$[item].quantity': 1}}, {arrayFilters: [{'item.productId': productId}]});
 
-    if (cartProductIndex >= 0) {
-        newQuantity = this.cart.items[cartProductIndex].quantity + 1;
-        updatedCartItems[cartProductIndex].quantity = newQuantity;
-    } else {
-        updatedCartItems.push({
-            productId: product._id, quantity: newQuantity
-        });
-    }
-    const updatedCart = {
-        items: updatedCartItems
-    };
-    this.cart = updatedCart;
-    return this.save();
+    if (incrementResult.matchedCount > 0) return incrementResult;
+    const pushResult = await this.constructor.updateOne({
+        _id: this._id, 'cart.items.productId': {$ne: productId}
+    }, {
+        $push: {
+            'cart.items': {
+                productId: productId, quantity: 1
+            }
+        }
+    });
+    if (pushResult.modifiedCount > 0) return pushResult;
+    return this.constructor.updateOne({
+        _id: this._id, 'cart.items.productId': productId
+    }, {
+        $inc: {
+            'cart.items.$[item].quantity': 1
+        }
+    }, {
+        arrayFilters: [{'item.productId': productId}]
+    });
 };
 
 userSchema.methods.removeFromCart = function (productId) {
-    const updatedCartItems = this.cart.items.filter(item => {
-        return item.productId.toString() !== productId.toString();
+    return this.constructor.updateOne({_id: this._id}, {
+        $pull: {
+            'cart.items': {productId: productId}
+        }
     });
-    this.cart.items = updatedCartItems;
-    return this.save();
 };
 
 userSchema.methods.clearCart = function () {
-    this.cart = {items: []};
-    return this.save();
+    return this.constructor.updateOne({_id: this._id}, {
+        $set: {
+            'cart.items': []
+        }
+    });
 };
-
+userSchema.index({resetToken: 1});
 module.exports = mongoose.model('User', userSchema);
 
 // const mongodb = require('mongodb');
