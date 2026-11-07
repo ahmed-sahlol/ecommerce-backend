@@ -2,9 +2,12 @@ termainal
 explain
 
 node_modules/
+coverage/
 
 .env
 .env.*
 !.env.example
 
 .idea/
+
+npm-debug.log*

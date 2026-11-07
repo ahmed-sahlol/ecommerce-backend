@@ -15,9 +15,8 @@ const User = require('./models/user');
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const PORT = process.env.PORT || 3000;
 
-if (!process.env.MONGODB_URI || !process.env.SESSION_SECRET) {
-    throw new Error('Missing required environment variables');
-}
+if (!process.env.MONGODB_URI || !process.env.SESSION_SECRET) throw new Error('Missing required environment variables');
+
 const app = express();
 const store = new MongoDBStore({
     uri: process.env.MONGODB_URI, collection: 'sessions'
